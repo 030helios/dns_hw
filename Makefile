@@ -1,4 +1,4 @@
 all:
-	gcc -o dns main.c dns.c
+	gcc -o dns_attack main.c dns.c
 clean:
-	rm -f dns
+	rm -f dns_attack
