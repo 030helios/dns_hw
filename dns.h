@@ -9,8 +9,8 @@
 
 // Typedef the iphdr and udphdr from the netinet libs to prevent
 // an infestation of "struct" in all the checksum and size calculations
-typedef struct iphdr iph;
-typedef struct udphdr udph;
+typedef struct iphdr iphdr;
+typedef struct udphdr udphdr;
 
 // Pseudoheader struct
 typedef struct
@@ -31,7 +31,7 @@ typedef struct
   unsigned short ans;    // Answer Count
   unsigned short auth;   // Authority RR
   unsigned short add;    // Additional RR
-} dns_hdr;
+} dns_header;
 
 // Question types
 typedef struct

