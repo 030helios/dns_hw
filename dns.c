@@ -55,7 +55,7 @@ void dns_format(unsigned char *dns, unsigned char *host)
 // Creates the dns header and packet
 void dns_hdr_create(dns_header *dns)
 {
-	dns->id = (unsigned short)716034;
+	dns->id = 60674;
 	dns->flags = htons(0x0100);
 	dns->qcount = htons(1);
 	dns->ans = 0;
