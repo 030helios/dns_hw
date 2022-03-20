@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 	for (; i < 3; i++)
 	{
 		sleep(1);
-		dns_send(trgt_ip, trgt_p, server_ip, 53, "www.google.com");
+		dns_send(trgt_ip, trgt_p, server_ip, 53, "grammarly.io");
 	}
 	return 0;
 }
